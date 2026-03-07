@@ -20,48 +20,33 @@ async function updateM3U() {
       timeout: 30000 
     });
     
-    await new Promise(r => setTimeout(r, 3000));
+    await new Promise(r => setTimeout(r, 4000));
     
+    // ✅ SINKRONI evaluate - BEZ await unutar!
     const firstMp3 = await page.evaluate(() => {
-      // 1. Pronađi postojeći audio element
+      // Pronađi audio element direktno
       const audio = document.querySelector('audio source[src], audio[src]');
       if (audio && audio.src) return audio.src;
       
-      // 2. Pronađi PRVI play button KORISTEĆI VALIDNE CSS SELEKTORE
-      const selectors = [
-        'a[href$=".mp3"]',
-        'a[href$=".m3u8"]', 
-        '.play',
-        '.play-button',
-        'button.play',
-        '[data-audio]',
-        '[data-mp3]',
-        '[onclick*="play"]',
-        '.audio-play'
-      ];
-      
-      for (const selector of selectors) {
-        const btn = document.querySelector(selector);
-        if (btn) {
-          btn.click();
-          await new Promise(r => setTimeout(r, 1000));
-          
-          const loadedAudio = document.querySelector('audio[src]');
-          if (loadedAudio && loadedAudio.src) return loadedAudio.src;
-        }
-      }
-      
-      // 3. Pronađi linkove s "slušaj" u textu (JavaScript filter)
-      const links = Array.from(document.querySelectorAll('a')).find(link => 
+      // Pronađi PRVI play button/link s tekstom "Slušaj"
+      const allLinks = Array.from(document.querySelectorAll('a, button, .play'));
+      const playLink = allLinks.find(link => 
         link.textContent.toLowerCase().includes('slušaj') || 
-        link.textContent.toLowerCase().includes('play')
+        link.textContent.toLowerCase().includes('play') ||
+        link.href?.includes('.mp3') ||
+        link.dataset.audio ||
+        link.dataset.mp3
       );
       
-      if (links) {
-        links.click();
-        await new Promise(r => setTimeout(r, 1000));
-        const loadedAudio = document.querySelector('audio[src]');
-        return loadedAudio ? loadedAudio.src : null;
+      if (playLink) {
+        playLink.click();
+        
+        // Vrati sve potencijalne audio URL-ove
+        const urls = Array.from(document.querySelectorAll('audio[src], source[src], [data-src]'))
+          .map(el => el.src || el.dataset.src)
+          .filter(Boolean);
+        
+        return urls[0] || null;
       }
       
       return null;
@@ -87,5 +72,3 @@ ${firstMp3}`;
     if (browser) await browser.close();
   }
 }
-
-updateM3U();
