@@ -20,27 +20,48 @@ async function updateM3U() {
       timeout: 30000 
     });
     
-    // ✅ ISPRAVKA: Koristi Promise umjesto waitForTimeout
     await new Promise(r => setTimeout(r, 3000));
     
-    // Pronađi PRVI play button i izvuci MP3
     const firstMp3 = await page.evaluate(() => {
-      // Pronađi postojeći audio element
+      // 1. Pronađi postojeći audio element
       const audio = document.querySelector('audio source[src], audio[src]');
       if (audio && audio.src) return audio.src;
       
-      // Pronađi prvi "Slušaj" / "Play" button i simuliraj klik
-      const playBtns = document.querySelectorAll('a[href*="mp3"], a:contains("Slušaj"), a:contains("slušaj"), button.play, .play-button');
-      if (playBtns.length > 0) {
-        playBtns[0].click();
-        
-        // Čekaj da se audio učita
-        return new Promise(resolve => {
-          setTimeout(() => {
-            const loadedAudio = document.querySelector('audio[src]');
-            resolve(loadedAudio ? loadedAudio.src : null);
-          }, 1500);
-        });
+      // 2. Pronađi PRVI play button KORISTEĆI VALIDNE CSS SELEKTORE
+      const selectors = [
+        'a[href$=".mp3"]',
+        'a[href$=".m3u8"]', 
+        '.play',
+        '.play-button',
+        'button.play',
+        '[data-audio]',
+        '[data-mp3]',
+        '[onclick*="play"]',
+        '.audio-play'
+      ];
+      
+      for (const selector of selectors) {
+        const btn = document.querySelector(selector);
+        if (btn) {
+          btn.click();
+          await new Promise(r => setTimeout(r, 1000));
+          
+          const loadedAudio = document.querySelector('audio[src]');
+          if (loadedAudio && loadedAudio.src) return loadedAudio.src;
+        }
+      }
+      
+      // 3. Pronađi linkove s "slušaj" u textu (JavaScript filter)
+      const links = Array.from(document.querySelectorAll('a')).find(link => 
+        link.textContent.toLowerCase().includes('slušaj') || 
+        link.textContent.toLowerCase().includes('play')
+      );
+      
+      if (links) {
+        links.click();
+        await new Promise(r => setTimeout(r, 1000));
+        const loadedAudio = document.querySelector('audio[src]');
+        return loadedAudio ? loadedAudio.src : null;
       }
       
       return null;
@@ -61,7 +82,6 @@ ${firstMp3}`;
     
   } catch (error) {
     console.error('❌', error.message);
-    // Fallback na HR1
     fs.writeFileSync('vijesti.m3u', '#EXTM3U\n#EXTINF:-1,HRT Vijesti Fallback\nhttps://radio.hrt.hr/stream/6');
   } finally {
     if (browser) await browser.close();
