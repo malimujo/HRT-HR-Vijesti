@@ -22,7 +22,7 @@ async function updateM3U() {
     await new Promise(r => setTimeout(r, 4000));
     
     const result = await page.evaluate(() => {
-      // 1. Pronađi MP3
+      // 1. Pronađi MP3 (radi ✅)
       const allLinks = Array.from(document.querySelectorAll('a[href], script'));
       let mp3Url = null;
       
@@ -42,20 +42,40 @@ async function updateM3U() {
         if (mp3Match && !mp3Url) mp3Url = mp3Match[1];
       }
       
-      // 2. Pronađi datum/vrijeme blizu MP3-a (naslov emisije)
+      // 2. POBOLJŠANA detekcija datuma/vremena
       let emisijaInfo = '';
-      if (mp3Url) {
-        // TRAŽI naslove/vrijeme ODmah prije/prisni MP3 elementa
-        const elements = Array.from(document.querySelectorAll('h1, h2, h3, .title, .date, time, .datetime'));
-        for (const el of elements) {
-          const text = el.textContent.trim();
-          // Pattern: "Sub, 07.03.", "u 10:00", "07.03.2026"
-          if (text.match(/[Sub|Ned|Pon|Uto|Sri|Čet|Pet],\s*\d{2}\.\d{2}/) || 
-              text.match(/u\s*\d{1,2}:\d{2}/) ||
-              text.includes('vijesti')) {
-            emisijaInfo = text.substring(0, 30); // Max 30 char
-            break;
-          }
+      
+      // Pronađi SVE elemente s tekstom i filtriraj
+      const allTextElements = Array.from(document.querySelectorAll('h1, h2, h3, h4, .title, .date, time, .datetime, .info, p, span'));
+      
+      for (const el of allTextElements) {
+        const text = el.textContent.trim();
+        if (!text) continue;
+        
+        // Patterni za HRT datume/vrijeme
+        if (text.match(/Sub|Ned|Pon|Uto|Sri|Čet|Pet/) && text.match(/\d{1,2}:\d{2}/)) {
+          emisijaInfo = text.substring(0, 25);
+          break;
+        }
+        if (text.match(/\d{2}\.\d{2}\.\d{4}/) || text.match(/\d{1,2}:\d{2}/)) {
+          emisijaInfo = text.substring(0, 25);
+          break;
+        }
+        if (text.toLowerCase().includes('vijesti') && text.length < 50) {
+          emisijaInfo = text.substring(0, 25);
+          break;
+        }
+      }
+      
+      // Ako ništa nije nađeno, izvuci iz MP3 filename-a
+      if (!emisijaInfo && mp3Url) {
+        const filenameMatch = mp3Url.match(/(\d{8})-vijesti-\d+-\d{14}\.mp3/);
+        if (filenameMatch) {
+          const dateStr = filenameMatch[1];
+          const year = dateStr.slice(0,4);
+          const month = dateStr.slice(4,6);
+          const day = dateStr.slice(6,8);
+          emisijaInfo = `${day}.${month}.${year}`;
         }
       }
       
@@ -63,28 +83,14 @@ async function updateM3U() {
     });
     
     console.log('🎵 MP3:', result.mp3Url);
-    console.log('📅 Emisija:', result.emisijaInfo);
+    console.log('📅 Emisija:', result.emisijaInfo || 'Nema info');
     
     if (result.mp3Url) {
+      const title = result.emisijaInfo ? `HRT Vijesti ${result.emisijaInfo}` : 'HRT Vijesti Najnovija';
       const m3uContent = `#EXTM3U
-#EXTINF:-1 tvg-logo="https://radio.hrt.hr/favicon.ico",HRT Vijesti ${result.emisijaInfo || 'Najnovija'}
+#EXTINF:-1 tvg-logo="https://radio.hrt.hr/favicon.ico",${title}
 ${result.mp3Url}`;
       
       fs.writeFileSync('vijesti.m3u', m3uContent);
       console.log('✅ M3U spreman s datumom!');
-    } else {
-      throw new Error('Nema MP3-a');
     }
-    
-  } catch (error) {
-    console.error('❌', error.message);
-    const fallback = `#EXTM3U
-#EXTINF:-1,HRT Vijesti Sub 07.03. 10:00
-https://api.hrt.hr/media/28/da/20260307-vijesti-37328738-20260307091001.mp3`;
-    fs.writeFileSync('vijesti.m3u', fallback);
-  } finally {
-    if (browser) await browser.close();
-  }
-}
-
-updateM3U();
