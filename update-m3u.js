@@ -21,9 +21,7 @@ async function updateM3U() {
     
     await new Promise(r => setTimeout(r, 4000));
     
-    // 🎯 TRAŽI TOČNO HRT API MP3 format!
     const firstMp3 = await page.evaluate(() => {
-      // Pronađi SVE linkove i filtriraj API.HRT.HR MP3
       const allLinks = Array.from(document.querySelectorAll('a[href], script'));
       
       for (const link of allLinks) {
@@ -33,7 +31,6 @@ async function updateM3U() {
         }
       }
       
-      // TRAŽI u script tagovima (JSON/data atributi)
       const scripts = Array.from(document.querySelectorAll('script'));
       for (const script of scripts) {
         const content = script.textContent || script.innerHTML;
@@ -48,20 +45,30 @@ async function updateM3U() {
     console.log('🎵 NAJNOVIJI MP3:', firstMp3);
     
     if (firstMp3) {
+      // ✅ ČIST M3U FORMAT - BEZ Markdown linkova!
       const m3uContent = `#EXTM3U
 #EXTINF:-1 tvg-logo="https://radio.hrt.hr/favicon.ico",HRT Vijesti - NAJNOVIJA
 ${firstMp3}`;
-      
-      fs.writeFileSync('vijesti.m3u', m3uContent);
-      console.log('✅ SPREMANO!');
+
+      // ✅ Testiraj da li MP3 radi
+      const testResponse = await fetch(firstMp3, { method: 'HEAD' });
+      if (testResponse.ok) {
+        fs.writeFileSync('vijesti.m3u', m3uContent);
+        console.log('✅ M3U spreman i testiran!');
+      } else {
+        throw new Error('MP3 link ne radi');
+      }
     } else {
-      throw new Error('Nema api.hrt.hr MP3-a');
+      throw new Error('Nema MP3-a');
     }
     
   } catch (error) {
     console.error('❌', error.message);
-    // Tvoj točan primjer kao fallback
-    fs.writeFileSync('vijesti.m3u', '#EXTM3U\n#EXTINF:-1,HRT Vijesti\nhttps://api.hrt.hr/media/28/da/20260307-vijesti-37328738-20260307091001.mp3');
+    // ✅ ČIST M3U fallback
+    const fallbackContent = `#EXTM3U
+#EXTINF:-1,HRT Vijesti Fallback
+https://api.hrt.hr/media/28/da/20260307-vijesti-37328738-20260307091001.mp3`;
+    fs.writeFileSync('vijesti.m3u', fallbackContent);
   } finally {
     if (browser) await browser.close();
   }
