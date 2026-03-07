@@ -45,33 +45,26 @@ async function updateM3U() {
     console.log('🎵 NAJNOVIJI MP3:', firstMp3);
     
     if (firstMp3) {
-      // ✅ ČIST M3U FORMAT - BEZ Markdown linkova!
+      // 🎯 IZVLAČENJE DATUMA/VREMENA iz filename-a: 20260307091001
+      const timeMatch = firstMp3.match(/(\d{4})(\d{2})(\d{2})(\d{6})\.mp3$/);
+      let emisijaInfo = 'Najnovija';
+      
+      if (timeMatch) {
+        const godina = timeMatch[1];  // 2026
+        const mjesec = timeMatch[2];  // 03
+        const dan = timeMatch[3];     // 07
+        const vrijeme = timeMatch[4]; // 091001
+        
+        const sat = vrijeme.slice(0,2);   // 09
+        const minute = vrijeme.slice(2,4); // 10
+        
+        emisijaInfo = `${dan}.${mjesec}.${godina} ${sat}:${minute}`;
+      }
+      
+      console.log('📅 Datum/vrijeme:', emisijaInfo);
+      
       const m3uContent = `#EXTM3U
-#EXTINF:-1 tvg-logo="https://radio.hrt.hr/favicon.ico",HRT Vijesti - NAJNOVIJA
+#EXTINF:-1 tvg-logo="https://radio.hrt.hr/favicon.ico",HRT Vijesti ${emisijaInfo}
 ${firstMp3}`;
 
-      // ✅ Testiraj da li MP3 radi
-      const testResponse = await fetch(firstMp3, { method: 'HEAD' });
-      if (testResponse.ok) {
-        fs.writeFileSync('vijesti.m3u', m3uContent);
-        console.log('✅ M3U spreman i testiran!');
-      } else {
-        throw new Error('MP3 link ne radi');
-      }
-    } else {
-      throw new Error('Nema MP3-a');
-    }
-    
-  } catch (error) {
-    console.error('❌', error.message);
-    // ✅ ČIST M3U fallback
-    const fallbackContent = `#EXTM3U
-#EXTINF:-1,HRT Vijesti Fallback
-https://api.hrt.hr/media/28/da/20260307-vijesti-37328738-20260307091001.mp3`;
-    fs.writeFileSync('vijesti.m3u', fallbackContent);
-  } finally {
-    if (browser) await browser.close();
-  }
-}
-
-updateM3U();
+      //
