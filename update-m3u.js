@@ -1,68 +1,70 @@
-const axios = require('axios');
-const cheerio = require('cheerio');
+const puppeteer = require('puppeteer');
 const fs = require('fs');
 
 async function updateM3U() {
+  let browser;
   try {
-    // Specifične HRT emisije sa MP3-ovima
-    const emisije = [
-      'https://radio.hrt.hr/slusaonica/vijesti',
-    ];
+    console.log('🚀 Pokrećem headless Chrome...');
     
-    let audioUrl = null;
+    browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
     
-    for (const url of emisije) {
-      console.log(`🔍 Tražim MP3 na: ${url}`);
+    const page = await browser.newPage();
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+    
+    console.log('📄 učitavam https://radio.hrt.hr/slusaonica/vijesti');
+    await page.goto('https://radio.hrt.hr/slusaonica/vijesti', { 
+      waitUntil: 'networkidle2',
+      timeout: 30000 
+    });
+    
+    // Čekaj da se player učita (kao što radiš ručno)
+    await page.waitForTimeout(3000);
+    
+    // Pronađi PRVI play button i klikni ga
+    const firstMp3 = await page.evaluate(() => {
+      // Pronađi prvi audio element ILI play button
+      const audio = document.querySelector('audio source[src], audio[src]');
+      if (audio && audio.src) return audio.src;
       
-      const response = await axios.get(url, {
-        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
-      });
-      
-      const $ = cheerio.load(response.data);
-      
-      // Pronađi MP3 u datotekama, streamovima ili player data atributima
-      audioUrl = 
-        $('a[href$=".mp3"]').attr('href') ||
-        $('a[href$=".m3u8"]').attr('href') ||
-        $('*[data-mp3], *[data-audio], *[data-stream]').first().attr('data-mp3') ||
-        $('audio source').attr('src');
-      
-      if (audioUrl) {
-        audioUrl = audioUrl.startsWith('http') ? audioUrl : 'https://radio.hrt.hr' + audioUrl;
-        console.log(`✅ MP3 NAĐEN: ${audioUrl}`);
-        break;
+      // Pronađi prvi "Slušaj" / "Play" button
+      const playBtn = document.querySelector('a[href*="mp3"], button, .play, [data-audio], [onclick*="play"]');
+      if (playBtn) {
+        // Simuliraj klik da se MP3 učita
+        playBtn.click();
+        
+        // Vrati src iz audio elementa nakon klika
+        return new Promise(resolve => {
+          setTimeout(() => {
+            const loadedAudio = document.querySelector('audio[src]');
+            resolve(loadedAudio ? loadedAudio.src : null);
+          }, 1000);
+        });
       }
-    }
-    
-    if (!audioUrl) {
-      // ULTIMATIVNI pokušaj - traži player API endpoint
-      console.log('Pokušavam pronaći JS player API...');
-      const jsPlayer = $('script:contains("mp3"), script:contains("stream"), script:contains("audio")')
-        .first().html() || '';
       
-      const mp3Match = jsPlayer.match(/"(https?:\/\/[^"]*\.mp3[^"]*)"/) ||
-                      jsPlayer.match(/'(https?:\/\/[^']*\.mp3[^']*)'/);
-      
-      if (mp3Match) audioUrl = mp3Match[1];
-    }
+      return null;
+    });
     
-    if (audioUrl) {
+    console.log('🎵 PRVI MP3:', firstMp3);
+    
+    if (firstMp3) {
       const m3uContent = `#EXTM3U
-#EXTINF:-1 tvg-logo="https://radio.hrt.hr/favicon.ico",HRT Vijesti MP3
-${audioUrl}`;
+#EXTINF:-1 tvg-logo="https://radio.hrt.hr/favicon.ico",HRT Vijesti - NAJNOVIJA
+${firstMp3}`;
       
       fs.writeFileSync('vijesti.m3u', m3uContent);
-      console.log('🎵 SPREMANO!');
+      console.log('✅ UŠTEDJENO!');
     } else {
       throw new Error('Nema MP3-a');
     }
     
   } catch (error) {
-    console.error('❌ Nema MP3-a, koristim HR1 emisije stranicu');
-    const fallback = `#EXTM3U
-#EXTINF:-1,HRT HR1 Najnovije emisije
-https://radio.hrt.hr/prvi-program`;
-    fs.writeFileSync('vijesti.m3u', fallback);
+    console.error('❌', error.message);
+    fs.writeFileSync('vijesti.m3u', '#EXTM3U\n#EXTINF:-1,HRT Vijesti\nhttps://radio.hrt.hr/stream/6');
+  } finally {
+    if (browser) await browser.close();
   }
 }
 
