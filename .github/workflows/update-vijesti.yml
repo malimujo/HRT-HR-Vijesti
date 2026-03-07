@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write  # ← OVO je ključno za 403 fix!
+  contents: write
 
 jobs:
   update:
@@ -18,10 +18,14 @@ jobs:
       with:
         node-version: '20'
     
-    - name: Instaliraj pakete
-      run: npm init -y && npm install cheerio axios
+    # PUPPETEER SPECIFIČNI SETUP
+    - name: Instaliraj Chrome i Puppeteer
+      run: |
+        npm init -y
+        npm install puppeteer cheerio axios
+        npx puppeteer browsers install chrome
     
-    - name: Generiraj M3U
+    - name: Generiraj M3U s Puppeteer
       run: node update-m3u.js
     
     - name: Commit i push
