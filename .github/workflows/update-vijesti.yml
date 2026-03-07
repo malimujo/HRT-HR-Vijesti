@@ -1,0 +1,31 @@
+name: Ažuriraj vijesti M3U
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Svakih 6 sati
+  workflow_dispatch:  # Ručno pokretanje
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    
+    - name: Instaliraj ovisnosti
+      run: npm init -y && npm install cheerio axios fs
+    
+    - name: Generiraj novu M3U
+      run: node update-m3u.js
+      
+    - name: Commit promjene
+      run: |
+        git config user.name "GitHub Action"
+        git config user.email "action@github.com"
+        git add vijesti.m3u
+        git diff --staged --quiet || git commit -m "Ažurirano: najnovije vijesti $(date)"
+        git push
