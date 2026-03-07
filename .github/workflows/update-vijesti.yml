@@ -1,7 +1,7 @@
 name: Ažuriraj vijesti M3U
 on:
   schedule:
-    - cron: '0 */6 * * *'  # Svakih 6 sati
+    - cron: '17 * * * *'  # Svaki sat na 17. minuti
   workflow_dispatch:
 
 permissions:
