@@ -21,52 +21,67 @@ async function updateM3U() {
     
     await new Promise(r => setTimeout(r, 4000));
     
-    const firstMp3 = await page.evaluate(() => {
-      const allLinks = Array.from(document.querySelectorAll('a[href], script'));
+    const result = await page.evaluate(() => {
+      const allLinks = Array.from(document.querySelectorAll('a[href], script, img'));
       
+      // 🎵 MP3 link
       for (const link of allLinks) {
         const href = link.href || link.src || link.getAttribute('data-src');
         if (href && href.includes('api.hrt.hr/media') && href.includes('.mp3')) {
-          return href;
+          return { mp3: href, image: null };
         }
       }
       
+      // 🖼️ Slika (webp/jpg)
+      let imageUrl = null;
+      for (const img of allLinks) {
+        const src = img.src || img.getAttribute('data-src');
+        if (src && src.includes('api.hrt.hr/media') && (src.includes('.webp') || src.includes('.jpg'))) {
+          imageUrl = src;
+          break;
+        }
+      }
+      
+      // 🎵 Script MP3 fallback
       const scripts = Array.from(document.querySelectorAll('script'));
       for (const script of scripts) {
         const content = script.textContent || script.innerHTML;
-        const mp3Match = content.match(/"(https?:\/\/api\.hrt\.hr\/media[^"]*\.mp3[^"]*)"/) ||
-                        content.match(/'(https?:\/\/api\.hrt\.hr\/media[^']*\.mp3[^']*)'/);
-        if (mp3Match) return mp3Match[1];
+        const mp3Match = content.match(/"(https?:\\/\\/api\\.hrt\\.hr\\/media[^"]*\\.mp3[^"]*)"/) ||
+                        content.match(/'(https?:\\/\\/api\\.hrt\\.hr\\/media[^']*\\.mp3[^']*)'/);
+        if (mp3Match) return { mp3: mp3Match[1], image: imageUrl };
       }
       
-      return null;
+      return { mp3: null, image: null };
     });
     
-    console.log('🎵 NAJNOVIJI MP3:', firstMp3);
+    console.log('🎵 MP3:', result.mp3);
+    console.log('🖼️ Slika:', result.image);
     
-    if (firstMp3) {
-      // 🎯 IZVLAČENJE DATUMA/VREMENA: 20260307091001.mp3
-      const timeMatch = firstMp3.match(/(\d{4})(\d{2})(\d{2})(\d{6})\.mp3$/);
+    if (result.mp3) {
+      // 📅 Datum/vrijeme iz MP3
+      const timeMatch = result.mp3.match(/(\\d{4})(\\d{2})(\\d{2})(\\d{6})\\.mp3$/);
       let emisijaInfo = 'Najnovija';
       
       if (timeMatch) {
-        const godina = timeMatch[1];  // 2026
-        const mjesec = timeMatch[2];  // 03
-        const dan = timeMatch[3];     // 07
-        const vrijeme = timeMatch[4]; // 091001
-        const sat = vrijeme.slice(0,2);   // 09
-        const minute = vrijeme.slice(2,4); // 10
+        const godina = timeMatch[1];
+        const mjesec = timeMatch[2];
+        const dan = timeMatch[3];
+        const vrijeme = timeMatch[4];
+        const sat = vrijeme.slice(0,2);
+        const minute = vrijeme.slice(2,4);
         emisijaInfo = `${dan}.${mjesec}.${godina} ${sat}:${minute}`;
       }
       
       console.log('📅 Datum/vrijeme:', emisijaInfo);
       
+      // 🆕 M3U s ikonom!
+      const imageUrl = result.image || 'https://radio.hrt.hr/favicon.ico';
       const m3uContent = `#EXTM3U
-#EXTINF:-1 tvg-logo="https://radio.hrt.hr/favicon.ico",HRT Vijesti ${emisijaInfo}
-${firstMp3}`;
+#EXTINF:-1 tvg-logo="${imageUrl}" group-title="Vijesti",HRT Vijesti ${emisijaInfo}
+${result.mp3}`;
 
       fs.writeFileSync('vijesti.m3u', m3uContent);
-      console.log('✅ M3U spreman s datumom/vremenom!');
+      console.log('✅ M3U spreman s ikonom!');
     } else {
       throw new Error('Nema MP3-a');
     }
@@ -74,8 +89,8 @@ ${firstMp3}`;
   } catch (error) {
     console.error('❌', error.message);
     const fallbackContent = `#EXTM3U
-#EXTINF:-1,HRT Vijesti 07.03.2026 09:10
-https://api.hrt.hr/media/28/da/20260307-vijesti-37328738-20260307091001.mp3`;
+#EXTINF:-1 tvg-logo="https://radio.hrt.hr/favicon.ico",HRT Vijesti 08.03.2026 19:00
+https://api.hrt.hr/media/28/da/20260308-vijesti-37328738-20260308190000.mp3`;
     fs.writeFileSync('vijesti.m3u', fallbackContent);
     console.log('✅ Fallback M3U spreman');
   } finally {
