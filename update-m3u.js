@@ -32,7 +32,7 @@ async function updateM3U() {
         }
       }
       
-      // 🖼️ Slika (webp/jpg)
+      // 🖼️ Slika
       let imageUrl = null;
       for (const img of allLinks) {
         const src = img.src || img.getAttribute('data-src');
@@ -42,13 +42,15 @@ async function updateM3U() {
         }
       }
       
-      // 🎵 Script MP3 fallback
+      // 🎵 FIXIRANI REGEX u scriptovima
       const scripts = Array.from(document.querySelectorAll('script'));
       for (const script of scripts) {
         const content = script.textContent || script.innerHTML;
-        const mp3Match = content.match(/"(https?:\\/\\/api\\.hrt\\.hr\\/media[^"]*\\.mp3[^"]*)"/) ||
-                        content.match(/'(https?:\\/\\/api\\.hrt\\.hr\\/media[^']*\\.mp3[^']*)'/);
-        if (mp3Match) return { mp3: mp3Match[1], image: imageUrl };
+        // ✅ ISPRAVLJEN REGEX:
+        const mp3Match1 = content.match(/"https?:\/\/api\.hrt\.hr\/media[^"]*\.mp3[^"]*"/);
+        const mp3Match2 = content.match(/'https?:\/\/api\.hrt\.hr\/media[^']*\.mp3[^']*'/);
+        if (mp3Match1) return { mp3: mp3Match1[0].slice(1, -1), image: imageUrl };
+        if (mp3Match2) return { mp3: mp3Match2[0].slice(1, -1), image: imageUrl };
       }
       
       return { mp3: null, image: null };
@@ -58,8 +60,7 @@ async function updateM3U() {
     console.log('🖼️ Slika:', result.image);
     
     if (result.mp3) {
-      // 📅 Datum/vrijeme iz MP3
-      const timeMatch = result.mp3.match(/(\\d{4})(\\d{2})(\\d{2})(\\d{6})\\.mp3$/);
+      const timeMatch = result.mp3.match(/(\d{4})(\d{2})(\d{2})(\d{6})\.mp3$/);
       let emisijaInfo = 'Najnovija';
       
       if (timeMatch) {
@@ -74,7 +75,6 @@ async function updateM3U() {
       
       console.log('📅 Datum/vrijeme:', emisijaInfo);
       
-      // 🆕 M3U s ikonom!
       const imageUrl = result.image || 'https://radio.hrt.hr/favicon.ico';
       const m3uContent = `#EXTM3U
 #EXTINF:-1 tvg-logo="${imageUrl}" group-title="Vijesti",HRT Vijesti ${emisijaInfo}
