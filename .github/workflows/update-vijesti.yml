@@ -1,51 +1,37 @@
-name: Ažuriraj Explora M3U - Utorkom 17-24h
+name: Ažuriraj Explora M3U
 on:
-  schedule:
-    # 🕐 UTORCI 17:00-23:30 svakih 30 min (CET = UTC+1)
+schedule:
+ # 🕐 UTORCI 17:00-23:30 svakih 30 min (CET = UTC+1)
     # UTC: 16:00, 16:30, 17:00... 22:30 → CET: 17:00-23:30
     - cron: '0,30 16-22 * * 2'
-  workflow_dispatch:
+workflow_dispatch:
 
 permissions:
-  contents: write
+contents: write
 
 jobs:
-  update-explora:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
-    
-    # PUPPETEER SPECIFIČNI SETUP
-    - name: Instaliraj Chrome i Puppeteer
-      run: |
-        npm init -y
-        npm install puppeteer
-        npx puppeteer browsers install chrome
-    
-    - name: Debug - Provjeri vrijeme
-      run: |
-        echo "Trenutno UTC vrijeme: $(date -u)"
-        echo "Trenutno CET vrijeme: $(date)"
-        echo "Dan u tjednu (2=utorak): $(date +%w)"
-    
-    - name: Generiraj Explora M3U
-      run: node explora.js
-    
-    - name: Provjeri da li je M3U generiran
-      run: |
-        ls -la *.m3u || echo "❌ Nema M3U datoteka!"
-        test -f explora.m3u && echo "✅ explora.m3u postoji!" || exit 1
-        cat explora.m3u
-    
-    - name: Commit i push
-      uses: stefanzweifel/git-auto-commit-action@v5
-      with:
-        commit_message: "Explora auto-update: ${{ github.run_id }} (utorak ${{ github.run_number }})"
-        file_pattern: explora.m3u
+update:
+runs-on: ubuntu-latest
+steps:
+- uses: actions/checkout@v4
+
+- name: Setup Node.js
+uses: actions/setup-node@v4
+with:
+node-version: '20'
+
+# PUPPETEER SPECIFIČNI SETUP
+- name: Instaliraj Chrome i Puppeteer
+run: |
+npm init -y
+npm install puppeteer cheerio axios
+npx puppeteer browsers install chrome
+
+- name: Generiraj M3U s Puppeteer
+run: node update-m3u.js
+
+- name: Commit i push
+uses: stefanzweifel/git-auto-commit-action@v5
+with:
+commit_message: "Explora: ${{ github.run_id }}"
+file_pattern: explora.m3u
