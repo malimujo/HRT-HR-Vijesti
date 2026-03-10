@@ -70,7 +70,7 @@ async function updateM3U() {
         const vrijeme = timeMatch[4];
         const sat = vrijeme.slice(0,2);
         const minute = vrijeme.slice(2,4);
-        emisijaInfo = `${dan}.${mjesec}-${sat}:${minute}`;
+        emisijaInfo = `${dan}.${mjesec}.${sat}:${minute}.`;
       }
       
       console.log('📅 Datum/vrijeme:', emisijaInfo);
