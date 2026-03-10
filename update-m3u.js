@@ -46,9 +46,8 @@ break;
 const scripts = Array.from(document.querySelectorAll('script'));
 for (const script of scripts) {
 const content = script.textContent || script.innerHTML;
-// ✅ ISPRAVLJEN REGEX:
-const mp3Match1 = content.match(/"https?:\\/\\/api\\.hrt\\.hr\\/media[^"]*\\.mp3[^"]*"/);
-const mp3Match2 = content.match(/'https?:\\/\\/api\\.hrt\\.hr\\/media[^']*\\.mp3[^']*'/);
+const mp3Match1 = content.match(/"https?:\/\/api\.hrt\.hr\/media[^"]*\.mp3[^"]*"/);
+const mp3Match2 = content.match(/'https?:\/\/api\.hrt\.hr\/media[^']*\.mp3[^']*'/);
 if (mp3Match1) return { mp3: mp3Match1[0].slice(1, -1), image: imageUrl };
 if (mp3Match2) return { mp3: mp3Match2[0].slice(1, -1), image: imageUrl };
 }
@@ -60,7 +59,7 @@ console.log('🎵 MP3:', result.mp3);
 console.log('🖼️ Slika:', result.image);
 
 if (result.mp3) {
-const timeMatch = result.mp3.match(/(\\d{4})(\\d{2})(\\d{2})(\\d{6})\\.mp3$/);
+const timeMatch = result.mp3.match(/(\d{4})(\d{2})(\d{2})(\d{6})\.mp3$/);
 let emisijaInfo = 'Najnovija';
 
 if (timeMatch) {
