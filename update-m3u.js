@@ -1,10 +1,10 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 
-async function updateM3U() {
+async function updateExploraM3U() {
   let browser;
   try {
-    console.log('🚀 Pokrećem Chrome...');
+    console.log('🚀 Pokrećem Chrome za Explora...');
     
     browser = await puppeteer.launch({
       headless: true,
@@ -14,8 +14,8 @@ async function updateM3U() {
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
     
-    console.log('📄 Učitavam https://radio.hrt.hr/slusaonica/vijesti');
-    await page.goto('https://radio.hrt.hr/slusaonica/vijesti', { 
+    console.log('📄 Učitavam https://radio.hrt.hr/slusaonica/explora');
+    await page.goto('https://radio.hrt.hr/slusaonica/explora', { 
       waitUntil: 'networkidle2'
     });
     
@@ -56,7 +56,7 @@ async function updateM3U() {
       return { mp3: null, image: null };
     });
     
-    console.log('🎵 MP3:', result.mp3);
+    console.log('🎵 MP3 Explora:', result.mp3);
     console.log('🖼️ Slika:', result.image);
     
     if (result.mp3) {
@@ -73,26 +73,26 @@ async function updateM3U() {
         emisijaInfo = `${dan}.${mjesec}.${sat}:${minute}.`;
       }
       
-      console.log('📅 Datum/vrijeme:', emisijaInfo);
+      console.log('📅 Datum/vrijeme Explora:', emisijaInfo);
       
       const imageUrl = result.image || 'https://radio.hrt.hr/favicon.ico';
       const m3uContent = `#EXTM3U
-#EXTINF:-1 tvg-logo="${imageUrl}" group-title="Vijesti",HRT Vijesti ${emisijaInfo}
+#EXTINF:-1 tvg-logo="${imageUrl}" group-title="Analiza",HRT Explora ${emisijaInfo}
 ${result.mp3}`;
 
-      fs.writeFileSync('vijesti.m3u', m3uContent);
-      console.log('✅ M3U spreman s ikonom!');
+      fs.writeFileSync('explora.m3u', m3uContent);
+      console.log('✅ Explora M3U spreman s ikonom!');
     } else {
       throw new Error('Nema MP3-a');
     }
     
   } catch (error) {
-    console.error('❌', error.message);
+    console.error('❌ Explora greška:', error.message);
     const fallbackContent = `#EXTM3U
-#EXTINF:-1 tvg-logo="https://radio.hrt.hr/favicon.ico",HRT Vijesti 08.03.2026 19:00
-https://api.hrt.hr/media/28/da/20260308-vijesti-37328738-20260308190000.mp3`;
-    fs.writeFileSync('vijesti.m3u', fallbackContent);
-    console.log('✅ Fallback M3U spreman');
+#EXTINF:-1 tvg-logo="https://radio.hrt.hr/favicon.ico",HRT Explora 10.03.2026 17:00
+https://api.hrt.hr/media/28/da/20260310-explora-37328739-20260310170000.mp3`;
+    fs.writeFileSync('explora.m3u', fallbackContent);
+    console.log('✅ Fallback Explora M3U spreman');
   } finally {
     if (browser) {
       await browser.close();
@@ -100,4 +100,4 @@ https://api.hrt.hr/media/28/da/20260308-vijesti-37328738-20260308190000.mp3`;
   }
 }
 
-updateM3U();
+updateExploraM3U();
