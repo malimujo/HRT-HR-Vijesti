@@ -76,7 +76,7 @@ console.log('📅 Datum/vrijeme:', emisijaInfo);
 
 const imageUrl = result.image || 'https://radio.hrt.hr/favicon.ico';
 const m3uContent = `#EXTM3U
-#EXTINF:-1 tvg-logo="https://github.com/malimujo/HRT-HR-Vijesti/blob/main/vijesti-20220426045300.jpg" group-title="Slušaonica",Vijesti ${emisijaInfo}
+#EXTINF:-1 tvg-logo="https://raw.githubusercontent.com/malimujo/HRT-HR-Vijesti/main/vijesti-20220426045300.jpg" group-title="Slušaonica",Vijesti ${emisijaInfo}
 ${result.mp3}`;
 
 fs.writeFileSync('vijesti.m3u', m3uContent);
