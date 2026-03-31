@@ -1,3 +1,3 @@
 #EXTM3U
-#EXTINF:-1 tvg-logo="https://github.com/malimujo/HRT-HR-Vijesti/blob/main/vijesti-20220426045300.jpg" group-title="Slušaonica",Vijesti 31.03.14:10.
+#EXTINF:-1 tvg-logo="https://raw.githubusercontent.com/malimujo/HRT-HR-Vijesti/main/vijesti-20220426045300.jpg" group-title="Slušaonica",Vijesti 31.03.14:10.
 https://api.hrt.hr/media/01/3e/20260331-vijesti-37413086-20260331141036.mp3
