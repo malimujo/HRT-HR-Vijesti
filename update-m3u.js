@@ -28,7 +28,7 @@ const allLinks = Array.from(document.querySelectorAll('a[href], script, img'));
 for (const link of allLinks) {
 const href = link.href || link.src || link.getAttribute('data-src');
 if (href && href.includes('api.hrt.hr/media') && href.includes('.mp3')) {
-return { mp3: href, image: null };
+return { mp3: href };
 }
 }
 
