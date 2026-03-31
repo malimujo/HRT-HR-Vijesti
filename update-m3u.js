@@ -32,31 +32,20 @@ return { mp3: href, image: null };
 }
 }
 
-// 🖼️ Slika
-let imageUrl = null;
-for (const img of allLinks) {
-const src = img.src || img.getAttribute('data-src');
-if (src && src.includes('api.hrt.hr/media') && (src.includes('.webp') || src.includes('.jpg'))) {
-imageUrl = src;
-break;
-}
-}
-
 // 🎵 FIXIRANI REGEX u scriptovima
 const scripts = Array.from(document.querySelectorAll('script'));
 for (const script of scripts) {
 const content = script.textContent || script.innerHTML;
 const mp3Match1 = content.match(/"https?:\/\/api\.hrt\.hr\/media[^"]*\.mp3[^"]*"/);
 const mp3Match2 = content.match(/'https?:\/\/api\.hrt\.hr\/media[^']*\.mp3[^']*'/);
-if (mp3Match1) return { mp3: mp3Match1[0].slice(1, -1), image: imageUrl };
-if (mp3Match2) return { mp3: mp3Match2[0].slice(1, -1), image: imageUrl };
+if (mp3Match1) return { mp3: mp3Match1[0].slice(1, -1), };
+if (mp3Match2) return { mp3: mp3Match2[0].slice(1, -1), };
 }
 
-return { mp3: null, image: null };
+return { mp3: null };
 });
 
 console.log('🎵 MP3:', result.mp3);
-console.log('🖼️ Slika:', result.image);
 
 if (result.mp3) {
 const timeMatch = result.mp3.match(/(\d{4})(\d{2})(\d{2})(\d{6})\.mp3$/);
@@ -74,9 +63,11 @@ emisijaInfo = `${dan}.${mjesec}.${sat}:${minute}.`;
 
 console.log('📅 Datum/vrijeme:', emisijaInfo);
 
-const imageUrl = result.image || 'https://radio.hrt.hr/favicon.ico';
+// 🔥 FIKSNA SLIKA umjesto HRT‑ove
+      const tvgLogoUrl = 'https://raw.githubusercontent.com/malimujo/HRT-HR-Vijesti/main/vijesti.png';
+
 const m3uContent = `#EXTM3U
-#EXTINF:-1 tvg-logo="https://raw.githubusercontent.com/malimujo/HRT-HR-Vijesti/main/vijesti.png" group-title="Slušaonica",Vijesti ${emisijaInfo}
+#EXTINF:-1 tvg-logo="${tvgLogoUrl}" group-title="Slušaonica",Vijesti ${emisijaInfo}
 ${result.mp3}`;
 
 fs.writeFileSync('vijesti.m3u', m3uContent);
