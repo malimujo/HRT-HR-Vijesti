@@ -1,3 +1,3 @@
 #EXTM3U
-StreamTitle='Parni Valjak - Jesen u meni';
+#EXT-X-ICY-META:YES, StreamTitle='Parni Valjak - Jesen u meni';
 https://api.hrt.hr/media/e5/19/20260507-vijesti-37567393-20260507061521.mp3
