@@ -1,4 +1,5 @@
 #EXTM3U
-#EXTINF:-1,MOJ RADIO TITLE
-#EXTVLCOPT:meta-title=MOJ RADIO TITLE
+#EXTINF:0 tvg-name="RADIO 101",RADIO 101
+#EXTVLCOPT:meta-title=RADIO 101
+#EXTVLCOPT:http-user-agent=VLC
 https://api.hrt.hr/media/e5/19/20260507-vijesti-37567393-20260507061521.mp3
