@@ -67,7 +67,7 @@ console.log('📅 Datum/vrijeme:', emisijaInfo);
       const tvgLogoUrl = 'https://raw.githubusercontent.com/malimujo/HRT-HR-Vijesti/main/vijesti.png';
 
 const m3uContent = `#EXTM3U
-#EXTINF:-1 artist="Contributors" album="Album" title="Naslov" tvg-logo="${tvgLogoUrl}" group-title="Slušaonica",Vijesti ${emisijaInfo}
+#EXTINF:-1 contributors="Rukav" artist="Rukav2" title="Bla bal" tvg-logo="${tvgLogoUrl}" group-title="Slušaonica",Vijesti ${emisijaInfo}
 ${result.mp3}`;
 
 fs.writeFileSync('vijesti.m3u', m3uContent);
